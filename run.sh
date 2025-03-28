@@ -1,0 +1,2 @@
+#!/bin/bash
+/Library/Java/JavaVirtualMachines/jdk-23.jdk/Contents/Home/bin/java --module-path /Library/Java/JavaFX/javafx-sdk-21.0.1/lib --add-modules javafx.controls,javafx.fxml,javafx.web,javafx.graphics,javafx.media -jar target/poker-game-1.0-SNAPSHOT.jar

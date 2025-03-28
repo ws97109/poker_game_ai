@@ -1,0 +1,2459 @@
+game1127<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>德州撲克遊戲</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #276c2d;
+            color: white;
+            padding: 20px;
+        }
+        .start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #276c2d;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .start-container {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+        }
+
+        .start-container h1 {
+            color: white;
+            margin-bottom: 2rem;
+            font-size: 3rem;
+        }
+
+
+        .start-container button {
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .start-container button:hover {
+            background-color: #45a049;
+        }
+        .game-screen {
+            width: 100%;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .main-container {
+            display: flex;
+            gap: 20px;
+            max-width: 1500px;
+            margin: 0 auto;
+        }
+
+        .game-container {
+            flex: 1;
+        }
+
+        .table {
+            background-color: #1a4a1d;
+            border-radius: 200px;
+            padding: 40px;
+            margin: 20px 0;
+            position: relative;
+            min-height: 600px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .community-cards {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .card {
+            width: 120px;
+            height: 174px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            background-color: white;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+            position: relative;
+            animation: dealCard 0.5s ease-out;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .card img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .card.hidden {
+            background-color: #b00;
+            background-image: linear-gradient(45deg, #b00 25%, transparent 25%, transparent 75%, #b00 75%, #b00), 
+                             linear-gradient(45deg, #b00 25%, transparent 25%, transparent 75%, #b00 75%, #b00);
+            background-size: 10px 10px;
+            background-position: 0 0, 5px 5px;
+        }
+
+        .card.hidden img {
+            opacity: 0;
+        }
+
+        .player-area, .bot-area {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin: 20px 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .player-info, .bot-info {
+            position: absolute;
+            left: 20%;
+            background-color: rgba(0,0,0,0.7);
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 18px;
+            color: white;
+            z-index: 2;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 18px;
+            border: 2px solid transparent;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #f0f0f0;
+            transition: all 0.3s ease;
+            min-width: 100px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            background-color: #e0e0e0;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background: #666;
+
+        }
+
+        #check-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        #check-btn:hover:not(:disabled) {
+            background-color: #45a049;
+        }
+
+        .pot {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            background-color: rgba(0,0,0,0.7);
+            padding: 15px 30px;
+            border-radius: 10px;
+            z-index: 10;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            animation: chipMove 0.3s ease-out;
+        }
+
+        .raise-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background-color: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 5px;
+            min-width: 300px;
+        }
+
+        .raise-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: space-between;
+        }
+
+        .raise-buttons button {
+            padding: 8px 12px;
+            font-size: 16px;
+            min-width: 80px;
+        }
+
+        .custom-raise {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .game-status {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0,0,0,0.7);
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 18px;
+            z-index: 3;
+            white-space: nowrap;
+            text-align: center;
+            margin-bottom: 20px;
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .blind-info {
+            position: absolute;
+            background-color: rgba(255,255,255,0.9);
+            color: black;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 14px;
+            font-weight: bold;
+            right: -70px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .hand-info {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-size: 16px;
+            bottom: -30px;
+        }
+
+        .history-panel {
+            width: 300px;
+            min-width: 300px;
+            background-color: rgba(0,0,0,0.8);
+            border-radius: 10px;
+            padding: 15px;
+            height: 800px;
+            max-height: calc(100vh - 40px);
+            margin-left: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .history-panel h2 {
+            color: white;
+            font-size: 20px;
+            margin-bottom: 15px;
+            text-align: center;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+
+        .history-content {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.3) transparent;
+        }
+        /* 為 Webkit 瀏覽器添加自定義滾動條樣式 */
+        .history-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .history-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .history-content::-webkit-scrollbar-thumb {
+            background-color: rgba(255,255,255,0.3);
+            border-radius: 3px;
+        }
+
+        .history-content::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(255,255,255,0.5);
+        }
+
+
+
+
+        .history-round {
+            background-color: rgba(255,255,255,0.1);
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .round-header {
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 5px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #444;
+        }
+
+        .action-record {
+            color: white;
+            font-size: 14px;
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .action-record .time {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .action-record.player {
+            color: #90caf9;
+        }
+
+        .action-record.bot {
+            color: #ef9a9a;
+        }
+
+        .round-separator {
+            height: 2px;
+            background-color: #ffd700;
+            margin: 15px 0;
+        }
+        .dealer-button {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: white;
+            color: black;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 3;
+        }
+
+        #player-dealer {
+            left: calc(50% - 150px);
+            bottom: 120px;
+        }
+
+        #bot-dealer {
+            left: calc(50% - 150px);
+            top: 120px;
+        }
+
+        .bet-amount {
+            position: absolute;
+            background-color: rgba(0,0,0,0.7);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            color: white;
+            z-index: 2;
+        }
+
+        #player-bet {
+            bottom: 150px;
+            left: calc(50% + 150px);  /* 改為向右偏移 */
+        }
+
+        #bot-bet {
+            top: 150px;
+            left: calc(50% + 150px);  /* 改為向右偏移 */
+        }
+        .animated-chip {
+            position: fixed;
+            width: 30px;
+            height: 30px;
+            background: #ffd700;
+            border-radius: 50%;
+            transition: all 0.5s ease;
+            z-index: 1000;
+        }
+
+        .tooltip {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            opacity: 0;
+            z-index: 1000;
+            transform: translateX(-50%);
+        }
+
+        .winner {
+            animation: winner-glow 2s ease-in-out;
+        }
+
+        @keyframes winner-glow {
+            0%, 100% { box-shadow: none; }
+            50% { box-shadow: 0 0 30px #ffd700; }
+        }
+
+        .bet-amount {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .card {
+            transition: transform 0.3s ease;
+        }
+
+        .card.winner {
+            transform: scale(1.1);
+        }
+
+        .blind-info {
+            background-color: rgba(255, 255, 255, 0.9);
+            color: black;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .action-animation {
+            position: absolute;
+            color: white;
+            font-size: 20px;
+            opacity: 1;
+            transition: all 0.5s ease;
+            z-index: 1000;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .chip-animation {
+            position: fixed;
+            background: gold;
+            color: black;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-weight: bold;
+            transition: all 0.5s ease;
+            z-index: 1000;
+            transform: translate(-50%, -50%);
+        }
+
+        .button.active {
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .current-actor {
+            animation: pulse 1s infinite;
+        }
+                /* 新增動畫效果 */
+                @keyframes cardFlip {
+            0% { transform: rotateY(0deg); }
+            100% { transform: rotateY(180deg); }
+        }
+
+        @keyframes dealCard {
+            0% { 
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 0;
+            }
+            100% { 
+                transform: translateY(0) rotate(360deg);
+                opacity: 1;
+            }
+        }
+        @keyframes chipMove {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+    </style>
+</head>
+<body>
+    <!-- 開始畫面 -->
+    <div id="start-screen" class="start-screen">
+        <div class="start-container">
+            <h1>德州撲克遊戲</h1>
+            <button id="start-game-btn">開始遊戲</button>
+        </div>
+    </div>
+
+    <!-- 遊戲畫面 -->
+    <div id="game-screen" class="game-screen" style="display: none;">
+        <div class="main-container">
+            <div class="game-container">
+                <div class="table">
+                    <div class="game-status" id="game-status"></div>
+                    
+                    <!-- 機器人區域 -->
+                    <div class="bot-area">
+                        <div class="bot-info">
+                            機器人籌碼: <span id="bot-chips">1000</span>
+                        </div>
+                        <div class="dealer-button" id="bot-dealer">D</div>
+                        <div class="bet-amount" id="bot-bet"></div>
+                        <div class="card hidden" id="bot-card1">
+                            <img src="" alt="card">
+                            <div class="blind-info" id="bot-blind"></div>
+                        </div>
+                        <div class="card hidden" id="bot-card2">
+                            <img src="" alt="card">
+                        </div>
+                        <div class="hand-info" id="bot-hand"></div>
+                    </div>
+
+                    <!-- 公共牌區域 -->
+                    <div class="community-cards">
+                        <div class="card hidden" id="community1">
+                            <img src="" alt="card">
+                        </div>
+                        <div class="card hidden" id="community2">
+                            <img src="" alt="card">
+                        </div>
+                        <div class="card hidden" id="community3">
+                            <img src="" alt="card">
+                        </div>
+                        <div class="card hidden" id="community4">
+                            <img src="" alt="card">
+                        </div>
+                        <div class="card hidden" id="community5">
+                            <img src="" alt="card">
+                        </div>
+                    </div>
+
+                    <!-- 底池 -->
+                    <div class="pot">
+                        底池: <span id="pot-amount">0</span>
+                    </div>
+
+                    <!-- 玩家區域 -->
+                    <div class="player-area">
+                        <div class="player-info">
+                            玩家籌碼: <span id="player-chips">1000</span>
+                        </div>
+                        <div class="dealer-button" id="player-dealer">D</div>
+                        <div class="bet-amount" id="player-bet"></div>
+                        <div class="card hidden" id="player-card1">
+                            <img src="" alt="card">
+                            <div class="blind-info" id="player-blind"></div>
+                        </div>
+                        <div class="card hidden" id="player-card2">
+                            <img src="" alt="card">
+                        </div>
+                        <div class="hand-info" id="player-hand"></div>
+                    </div>
+
+                    <!-- 控制按鈕區域 -->
+                    <div class="controls">
+                        <button id="check-btn" disabled>過牌</button>
+                        <button id="call-btn" disabled>跟注</button>
+                        <div class="raise-controls">
+                            <div class="raise-buttons">
+                                <button id="raise-33" disabled>33% 底池</button>
+                                <button id="raise-50" disabled>50% 底池</button>
+                                <button id="raise-75" disabled>75% 底池</button>
+                            </div>
+                            <div class="custom-raise">
+                                <input type="number" id="raise-input" min="1" step="1" disabled>
+                                <button id="raise-btn" disabled>確認加注</button>
+                            </div>
+                        </div>
+                        <button id="fold-btn" disabled>棄牌</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 歷史記錄面板 -->
+            <div class="history-panel">
+                <h2>遊戲歷史記錄</h2>
+                <div class="history-content" id="history-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 撲克牌類別
+        class Card {
+            constructor(suit, value) {
+                this.suit = suit;
+                this.value = value;
+                const suitMap = {
+                    'clubs': 'C',
+                    'diamonds': 'D',
+                    'hearts': 'H',
+                    'spades': 'S'
+                };
+                const valueMap = {
+                    '10': 'T'
+                };
+                const mappedValue = valueMap[value] || value;
+                this.imagePath = `images/${mappedValue}${suitMap[suit]}.png`;
+            }
+    
+            getImagePath() {
+                return this.imagePath;
+            }
+        }
+    
+        // 牌型判定類別
+        class PokerHand {
+            static HAND_RANKINGS = {
+                ROYAL_FLUSH: 10,
+                STRAIGHT_FLUSH: 9,
+                FOUR_OF_A_KIND: 8,
+                FULL_HOUSE: 7,
+                FLUSH: 6,
+                STRAIGHT: 5,
+                THREE_OF_A_KIND: 4,
+                TWO_PAIR: 3,
+                ONE_PAIR: 2,
+                HIGH_CARD: 1
+            };
+    
+            static CARD_VALUES = {
+                '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
+                'T': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14
+            };
+    
+            static evaluateHand(cards) {
+                const values = cards.map(card => card.value);
+                const suits = cards.map(card => card.suit);
+                
+                const isFlush = suits.every(suit => suit === suits[0]);
+                
+                const sortedValues = [...new Set(values)].map(v => 
+                    this.CARD_VALUES[v === 'T' ? '10' : v]).sort((a, b) => a - b);
+                const isStraight = sortedValues.length >= 5 && 
+                    sortedValues[sortedValues.length - 1] - 
+                    sortedValues[sortedValues.length - 5] === 4;
+    
+                const valueCounts = {};
+                values.forEach(value => {
+                    valueCounts[value] = (valueCounts[value] || 0) + 1;
+                });
+                
+                if (isFlush && isStraight && values.includes('A') && values.includes('K')) {
+                    return { rank: this.HAND_RANKINGS.ROYAL_FLUSH, name: '皇家同花順' };
+                }
+                
+                if (isFlush && isStraight) {
+                    return { rank: this.HAND_RANKINGS.STRAIGHT_FLUSH, name: '同花順' };
+                }
+                
+                if (Object.values(valueCounts).includes(4)) {
+                    return { rank: this.HAND_RANKINGS.FOUR_OF_A_KIND, name: '四條' };
+                }
+                
+                if (Object.values(valueCounts).includes(3) && 
+                    Object.values(valueCounts).includes(2)) {
+                    return { rank: this.HAND_RANKINGS.FULL_HOUSE, name: '葫蘆' };
+                }
+                
+                if (isFlush) {
+                    return { rank: this.HAND_RANKINGS.FLUSH, name: '同花' };
+                }
+                
+                if (isStraight) {
+                    return { rank: this.HAND_RANKINGS.STRAIGHT, name: '順子' };
+                }
+                
+                if (Object.values(valueCounts).includes(3)) {
+                    return { rank: this.HAND_RANKINGS.THREE_OF_A_KIND, name: '三條' };
+                }
+                
+                if (Object.values(valueCounts).filter(count => count === 2).length === 2) {
+                    return { rank: this.HAND_RANKINGS.TWO_PAIR, name: '兩對' };
+                }
+                
+                if (Object.values(valueCounts).includes(2)) {
+                    return { rank: this.HAND_RANKINGS.ONE_PAIR, name: '一對' };
+                }
+                
+                return { rank: this.HAND_RANKINGS.HIGH_CARD, name: '高牌' };
+            }
+    
+            static compareHands(hand1Cards, hand2Cards) {
+                const hand1 = this.evaluateHand(hand1Cards);
+                const hand2 = this.evaluateHand(hand2Cards);
+                
+                if (hand1.rank > hand2.rank) return 1;
+                if (hand1.rank < hand2.rank) return -1;
+                
+                const values1 = hand1Cards.map(card => 
+                    this.CARD_VALUES[card.value === 'T' ? '10' : card.value])
+                    .sort((a, b) => b - a);
+                const values2 = hand2Cards.map(card => 
+                    this.CARD_VALUES[card.value === 'T' ? '10' : card.value])
+                    .sort((a, b) => b - a);
+                
+                for (let i = 0; i < values1.length; i++) {
+                    if (values1[i] > values2[i]) return 1;
+                    if (values1[i] < values2[i]) return -1;
+                }
+                
+                return 0;
+            }
+        }
+    
+        // 牌堆類別
+        class Deck {
+            constructor() {
+                this.cards = [];
+                const suits = ['clubs', 'diamonds', 'hearts', 'spades'];
+                const values = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
+                
+                for (let suit of suits) {
+                    for (let value of values) {
+                        this.cards.push(new Card(suit, value));
+                    }
+                }
+            }
+    
+            shuffle() {
+                for (let i = this.cards.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [this.cards[i], this.cards[j]] = [this.cards[j], this.cards[i]];
+                }
+            }
+    
+            deal() {
+                return this.cards.pop();
+            }
+        }
+    
+        // 遊戲主類別開始
+        class Game {
+            debugGameState() {
+                console.log('Game State Debug:', {
+                    currentActor: this.currentActor,
+                    gameState: this.gameState,
+                    isAutoPlaying: this.isAutoPlaying,
+                    currentBetAmount: this.currentBetAmount,
+                    currentPlayerBet: this.currentPlayerBet,
+                    currentBotBet: this.currentBotBet,
+                    playerChips: this.playerChips,
+                    botChips: this.botChips,
+                    pot: this.pot
+                });
+            }
+
+            constructor() {
+                this.deck = new Deck();
+                this.playerChips = 1000;
+                this.botChips = 1000;
+                this.pot = 0;
+                this.playerHand = [];
+                this.botHand = [];
+                this.communityCards = [];
+                this.gameState = 'waiting';  // waiting, preflop, flop, turn, river, showdown
+                this.roundCount = 0;
+                this.isAutoPlaying = false;
+                this.isPlayerDealer = true;
+                this.currentRoundActions = [];
+                this.roundHistory = [];
+                this.SMALL_BLIND = 10;
+                this.BIG_BLIND = 20;
+                this.currentActor = null;
+                // 新增盲注和位置相關的狀態
+                this.smallBlindPosition = null;  // 小盲位置
+                this.bigBlindPosition = null;    // 大盲位置
+                this.currentBetRound = 0;        // 當前下注輪次
+                this.lastRaiseAmount = 0;        // 上一次加注金額
+                // 下注相關狀態
+                this.currentBetAmount = 0;  // 當前回合的下注金額
+                this.lastBetPlayer = null;  // 最後下注的玩家
+                this.actionsThisStreet = []; // 當前街的行動記錄
+                this.currentPlayerBet = 0;   // 玩家在當前回合的下注總額
+                this.currentBotBet = 0;      // 機器人在當前回合的下注總額
+
+
+                this.burnCards = [];  // 銷牌堆
+                this.lastBetterPreflop = null;  // 記錄翻牌前最後行動者
+                this.dealerPosition = 'player';  // 初始莊家位置
+                this.streetActions = new Set();  // 記錄當前街口誰行動過
+                this.currentStreet = 'preflop';  // 當前街口
+                this.isActionInProgress = false;  // 防止連續行動的標誌
+                // 初始化時執行
+                this.initialize();
+
+            }
+
+
+            initialize() {
+                // 等待 DOM 加載完成
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', () => this.setupEventListeners());
+                } else {
+                    this.setupEventListeners();
+                }
+            }
+            setupEventListeners() {
+                // 綁定開始遊戲按鈕
+                const startButton = document.getElementById('start-game-btn');
+                if (startButton) {
+                    startButton.addEventListener('click', () => this.startGame());
+                }
+
+                // 綁定其他按鈕
+                this.initializeGameControls();
+            }
+            // 新增初始化遊戲方法
+            initializeGame() {
+                const startButton = document.getElementById('start-game-btn');
+                if (startButton) {
+                    startButton.addEventListener('click', () => {
+                        this.startGame();
+                    });
+                }
+
+                // 初始化按鈕事件
+                this.initializeGameControls();
+            }
+
+            // 新增開始遊戲方法
+            startGame() {
+                console.log('Starting game...'); // 調試用
+
+                // 隱藏開始畫面
+                const startScreen = document.getElementById('start-screen');
+                if (startScreen) {
+                    startScreen.style.display = 'none';
+                }
+
+                // 顯示遊戲畫面
+                const gameScreen = document.getElementById('game-screen');
+                if (gameScreen) {
+                    gameScreen.style.display = 'block';
+                }
+
+
+                // 確保遊戲控件初始化
+                this.initializeGameControls();
+
+                // 開始新的一局
+                this.startNewHand();
+
+                // 更新顯示
+                this.updateDisplay();
+                this.updateGameStatus('遊戲開始');
+            }
+                // [新增] 檢查按鈕是否存在的方法
+            checkButtonsExist() {
+                const requiredButtons = [
+                    'check-btn', 
+                    'call-btn', 
+                    'raise-33', 
+                    'raise-50', 
+                    'raise-75',
+                    'raise-btn', 
+                    'fold-btn',
+                    'raise-input'
+                ];
+
+                const missingButtons = requiredButtons.filter(id => !document.getElementById(id));
+                if (missingButtons.length > 0) {
+                    console.error('Missing buttons:', missingButtons);
+                    return false;
+                }
+                return true;
+            }
+
+
+            // 更新初始化按鈕方法名稱和內容
+            initializeGameControls() {
+                // 使用函數來創建去抖動（debounce）的點擊處理器
+                const createDebouncedHandler = (handler) => {
+                    let isProcessing = false;
+                    return (...args) => {
+                        if (isProcessing) return;
+                        isProcessing = true;
+                        handler(...args);
+                        // 1秒後重置狀態
+                        setTimeout(() => {
+                            isProcessing = false;
+                        }, 1000);
+                    };
+                };
+
+                // 為每個按鈕添加去抖動的事件處理
+                const buttonBindings = {
+                    'check-btn': () => this.playerCheck(),
+                    'call-btn': () => this.playerCall(),
+                    'fold-btn': () => this.playerFold(),
+                    'raise-33': () => this.playerRaiseCustom(Math.floor(this.pot * 0.33)),
+                    'raise-50': () => this.playerRaiseCustom(Math.floor(this.pot * 0.5)),
+                    'raise-75': () => this.playerRaiseCustom(Math.floor(this.pot * 0.75)),
+                    'raise-btn': () => {
+                        const amount = parseInt(document.getElementById('raise-input').value);
+                        if (amount && amount > 0) {
+                            this.playerRaiseCustom(amount);
+                        }
+                    }
+                };
+
+                // 重新綁定按鈕事件（避免重複綁定）
+                Object.entries(buttonBindings).forEach(([id, handler]) => {
+                    const button = document.getElementById(id);
+                    if (button) {
+                        const debouncedHandler = createDebouncedHandler(handler);
+                        const newButton = button.cloneNode(true);
+                        button.parentNode.replaceChild(newButton, button);
+                        newButton.addEventListener('click', debouncedHandler);
+                    }
+                });
+
+                // 初始化加注輸入控件
+                this.initializeRaiseControls();
+            }
+            startNewGame() {
+                const startScreen = document.getElementById('start-screen');
+                const gameScreen = document.getElementById('game-screen');
+                
+                startScreen.style.display = 'none';
+                gameScreen.style.display = 'flex';
+                
+                this.resetGame();
+                this.startNewHand();
+            }
+
+            updateDealerPosition() {
+                // 更新莊家按鈕顯示
+                const playerDealer = document.getElementById('player-dealer');
+                const botDealer = document.getElementById('bot-dealer');
+                
+                console.log('Current dealer position:', this.dealerPosition); // 調試用
+
+                if (this.dealerPosition === 'player') {
+                    playerDealer.style.display = 'flex';
+                    botDealer.style.display = 'none';
+                } else {
+                    playerDealer.style.display = 'none';
+                    botDealer.style.display = 'flex';
+                }
+
+                // 更新遊戲狀態顯示中的莊家資訊
+                this.updateGameStatus(
+                    `第 ${this.roundCount} 局 - ${this.dealerPosition === 'player' ? '玩家' : '機器人'}是莊家`
+                );
+            }
+
+
+            // 修改 initializeRaiseControls 方法
+            initializeRaiseControls() {
+                const raiseInput = document.getElementById('raise-input');
+                const raiseBtn = document.getElementById('raise-btn');
+
+                // 使用去抖動的輸入處理
+                let inputTimeout;
+                raiseInput.addEventListener('input', () => {
+                    clearTimeout(inputTimeout);
+                    inputTimeout = setTimeout(() => {
+                        let value = parseInt(raiseInput.value);
+                        if (isNaN(value) || value < this.getMinRaiseAmount()) {
+                            value = this.getMinRaiseAmount();
+                        }
+                        if (value > this.playerChips) {
+                            value = this.playerChips;
+                        }
+                        raiseInput.value = value;
+                    }, 300);
+                });
+            }
+
+            // 更新可以加注的條件檢查
+            canRaise(player) {
+                if (this.currentActor !== player) return false;
+                
+                const chips = player === 'player' ? this.playerChips : this.botChips;
+                const currentBet = player === 'player' ? this.currentPlayerBet : this.currentBotBet;
+                const minRaise = this.getMinRaiseAmount();
+                
+                console.log('Raise check:', {
+                    player,
+                    chips,
+                    currentBet,
+                    minRaise,
+                    canRaise: chips >= (minRaise - currentBet)
+                });
+                
+                return chips >= (minRaise - currentBet);
+            }
+
+
+            // 更新遊戲狀態顯示
+            updateGameStatus(message) {
+                const statusElement = document.getElementById('game-status');
+                const phases = {
+                    'waiting': '等待開始',
+                    'preflop': '翻牌前',
+                    'flop': '翻牌圈',
+                    'turn': '轉牌圈',
+                    'river': '河牌圈',
+                    'showdown': '攤牌'
+                };
+
+                const position = this.dealerPosition === 'player' ? '你是莊家' : '機器人是莊家';
+                const phase = phases[this.gameState] || '';
+                const currentActor = this.currentActor === 'player' ? '輪到你行動' : '輪到機器人行動';
+                const betInfo = this.currentBetAmount > 0 ? 
+                    ` - 當前下注：${this.currentBetAmount}` : '';
+                
+                statusElement.textContent = `第 ${this.roundCount} 局 - ${position} - ${phase} - ${currentActor}${betInfo} - ${message}`;
+            }
+            addAnimatedChips(amount, from, to) {
+                const chip = document.createElement('div');
+                chip.className = 'animated-chip';
+                document.body.appendChild(chip);
+
+                const fromRect = from.getBoundingClientRect();
+                const toRect = to.getBoundingClientRect();
+
+                chip.style.left = `${fromRect.left + fromRect.width/2}px`;
+                chip.style.top = `${fromRect.top + fromRect.height/2}px`;
+
+                setTimeout(() => {
+                    chip.style.left = `${toRect.left + toRect.width/2}px`;
+                    chip.style.top = `${toRect.top + toRect.height/2}px`;
+                }, 50);
+
+                setTimeout(() => {
+                    document.body.removeChild(chip);
+                }, 500);
+            }
+            addTooltip(element, text) {
+                const tooltip = document.createElement('div');
+                tooltip.className = 'tooltip';
+                tooltip.textContent = text;
+                document.body.appendChild(tooltip);
+
+                element.addEventListener('mouseover', (e) => {
+                    const rect = element.getBoundingClientRect();
+                    tooltip.style.left = `${rect.left + rect.width/2}px`;
+                    tooltip.style.top = `${rect.top - 30}px`;
+                    tooltip.style.opacity = '1';
+                });
+
+                element.addEventListener('mouseout', () => {
+                    tooltip.style.opacity = '0';
+                });
+            }
+            showWinnerAnimation(winner) {
+                const element = winner === 'player' ? 
+                    document.querySelector('.player-area') : 
+                    document.querySelector('.bot-area');
+                    
+                element.classList.add('winner');
+                setTimeout(() => {
+                    element.classList.remove('winner');
+                }, 2000);
+            }
+            
+
+            addActionRecord(player, action, amount = null) {
+                const time = new Date().toLocaleTimeString();
+                const record = {
+                    time,
+                    player,
+                    action,
+                    amount,
+                    roundNumber: this.roundCount,
+                    // 加入當前莊家資訊
+                    dealerPosition: this.dealerPosition
+                };
+                this.currentRoundActions.push(record);
+                this.updateHistoryDisplay();
+            }
+
+            // 修改 updateHistoryDisplay 方法
+            updateHistoryDisplay() {
+                const historyContent = document.getElementById('history-content');
+                let html = '';
+
+                if (this.currentRoundActions.length > 0) {
+                    html += `
+                        <div class="history-round">
+                            <div class="round-header">第 ${this.roundCount} 局 (${this.currentRoundActions[0].dealerPosition === 'player' ? '玩家' : '機器人'}是莊家)</div>
+                            ${this.currentRoundActions.map(record => `
+                                <div class="action-record ${record.player.toLowerCase()}">
+                                    <span>${record.player} ${record.action}${record.amount ? ` $${record.amount}` : ''}</span>
+                                    <span class="time">${record.time}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                // 顯示歷史紀錄
+                html += this.roundHistory.map(round => `
+                    <div class="round-separator"></div>
+                    <div class="history-round">
+                        <div class="round-header">第 ${round.roundNumber} 局 (${round.dealerPosition === 'player' ? '玩家' : '機器人'}是莊家)</div>
+                        ${round.actions.map(record => `
+                            <div class="action-record ${record.player.toLowerCase()}">
+                                <span>${record.player} ${record.action}${record.amount ? ` $${record.amount}` : ''}</span>
+                                <span class="time">${record.time}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `).join('');
+
+                historyContent.innerHTML = html;
+                // 保持滾動位置在底部
+                historyContent.scrollTop = historyContent.scrollHeight;
+                
+                // 添加滾動事件監聽器來記住用戶的滾動位置
+                let userHasScrolled = false;
+                historyContent.addEventListener('scroll', () => {
+                    userHasScrolled = true;
+                    // 如果用戶滾動到底部，重置標記
+                    if (historyContent.scrollHeight - historyContent.scrollTop === historyContent.clientHeight) {
+                        userHasScrolled = false;
+                    }
+                });
+                
+                // 只有在用戶沒有手動滾動時，才自動滾動到底部
+                if (!userHasScrolled) {
+                    historyContent.scrollTop = historyContent.scrollHeight;
+                }
+            }
+
+            updateDisplay() {
+                // 更新玩家手牌
+                const playerCard1 = document.querySelector('#player-card1');
+                const playerCard2 = document.querySelector('#player-card2');
+                
+                if (this.playerHand.length > 0) {
+                    playerCard1.classList.remove('hidden');
+                    playerCard2.classList.remove('hidden');
+                    playerCard1.querySelector('img').src = this.playerHand[0].getImagePath();
+                    playerCard2.querySelector('img').src = this.playerHand[1].getImagePath();
+                } else {
+                    playerCard1.classList.add('hidden');
+                    playerCard2.classList.add('hidden');
+                }
+
+                // 更新機器人手牌
+                const botCard1 = document.querySelector('#bot-card1');
+                const botCard2 = document.querySelector('#bot-card2');
+                
+                if (this.gameState === 'showdown' && this.botHand.length > 0) {
+                    botCard1.classList.remove('hidden');
+                    botCard2.classList.remove('hidden');
+                    botCard1.querySelector('img').src = this.botHand[0].getImagePath();
+                    botCard2.querySelector('img').src = this.botHand[1].getImagePath();
+                } else {
+                    botCard1.classList.add('hidden');
+                    botCard2.classList.add('hidden');
+                }
+
+                // 更新公共牌
+                for (let i = 0; i < 5; i++) {
+                    const communityCard = document.querySelector(`#community${i+1}`);
+                    if (this.communityCards[i]) {
+                        communityCard.classList.remove('hidden');
+                        communityCard.querySelector('img').src = this.communityCards[i].getImagePath();
+                    } else {
+                        communityCard.classList.add('hidden');
+                    }
+                }
+
+                // 更新籌碼和底池
+                document.getElementById('player-chips').textContent = this.playerChips;
+                document.getElementById('bot-chips').textContent = this.botChips;
+                document.getElementById('pot-amount').textContent = this.pot;
+
+                // 更新盲注顯示
+                document.getElementById('player-blind').textContent = 
+                    this.isPlayerDealer ? `大盲 ${this.BIG_BLIND}` : `小盲 ${this.SMALL_BLIND}`;
+                document.getElementById('bot-blind').textContent = 
+                    this.isPlayerDealer ? `小盲 ${this.SMALL_BLIND}` : `大盲 ${this.BIG_BLIND}`;
+                // 更新莊家按鈕顯示
+                document.getElementById('player-dealer').style.display = 
+                    this.dealerPosition === 'player' ? 'flex' : 'none';
+                document.getElementById('bot-dealer').style.display = 
+                    this.dealerPosition === 'bot' ? 'flex' : 'none';
+
+                // 更新下注金額顯示
+                document.getElementById('player-bet').textContent = 
+                    this.currentPlayerBet > 0 ? `下注: ${this.currentPlayerBet}` : '';
+                document.getElementById('bot-bet').textContent = 
+                    this.currentBotBet > 0 ? `下注: ${this.currentBotBet}` : '';
+                // 更新按鈕狀態
+                this.updateButtonStates();
+
+                // 更新加注輸入框
+                const raiseInput = document.getElementById('raise-input');
+                raiseInput.max = this.playerChips;
+                raiseInput.value = Math.min(this.getMinRaiseAmount(), this.playerChips);
+            }
+
+            // 修改按鈕啟用狀態
+            updateButtonStates() {
+                // 如果不是玩家回合，禁用所有按鈕
+                if (this.currentActor !== 'player') {
+                    this.disableAllButtons();
+                    return;
+                }
+
+                const callAmount = this.currentBetAmount - this.currentPlayerBet;
+                console.log('Current game state:', {
+                    gameState: this.gameState,
+                    currentActor: this.currentActor,
+                    bigBlindPosition: this.bigBlindPosition,
+                    currentBetAmount: this.currentBetAmount,
+                    currentPlayerBet: this.currentPlayerBet,
+                    currentBotBet: this.currentBotBet
+                });
+
+                // 決定按鈕狀態
+                const buttonStates = {
+                    'check-btn': this.canCheck('player'),
+                    'call-btn': callAmount > 0 && this.playerChips > 0,
+                    'fold-btn': true,  // 玩家總是可以棄牌
+                    'raise-33': this.canRaise('player'),
+                    'raise-50': this.canRaise('player'),
+                    'raise-75': this.canRaise('player'),
+                    'raise-btn': this.canRaise('player')
+                };
+
+                // 更新按鈕狀態
+                Object.entries(buttonStates).forEach(([id, enabled]) => {
+                    const button = document.getElementById(id);
+                    if (button) {
+                        button.disabled = !enabled;
+                        button.classList.toggle('disabled', !enabled);
+                        if (enabled) {
+                            button.style.opacity = '1';
+                            button.style.cursor = 'pointer';
+                        } else {
+                            button.style.opacity = '0.5';
+                            button.style.cursor = 'not-allowed';
+                        }
+                    }
+                });
+
+                // 更新跟注按鈕文字
+                const callBtn = document.getElementById('call-btn');
+                if (callBtn && callAmount > 0) {
+                    callBtn.textContent = `跟注 $${callAmount}`;
+                }
+
+                // 更新加注輸入框
+                const raiseInput = document.getElementById('raise-input');
+                if (raiseInput) {
+                    const canRaise = this.canRaise('player');
+                    raiseInput.disabled = !canRaise;
+                    if (canRaise) {
+                        raiseInput.min = this.getMinRaiseAmount();
+                        raiseInput.max = this.playerChips;
+                        raiseInput.value = Math.min(this.getMinRaiseAmount(), this.playerChips);
+                    }
+                }
+            }
+            // 修改行動者切換邏輯
+            setCurrentActor(actor) {
+                console.log('Setting current actor to:', actor);
+                this.currentActor = actor;
+                
+                if (actor === 'player') {
+                    this.enableButtons();
+                    this.updateButtonStates();
+                    this.updateGameStatus('輪到玩家行動');
+                } else {
+                    this.disableAllButtons();
+                    this.updateGameStatus('輪到機器人行動');
+                    setTimeout(() => this.botAction(), 1000);
+                }
+            }
+            // 新增禁用所有按鈕的方法
+            disableAllButtons() {
+                const buttonIds = ['check-btn', 'call-btn', 'fold-btn', 'raise-33', 'raise-50', 'raise-75', 'raise-btn', 'raise-input'];
+                buttonIds.forEach(id => {
+                    const button = document.getElementById(id);
+                    if (button) {
+                        button.disabled = true;
+                        button.classList.add('disabled');
+                    }
+                });
+            }
+            isPreflopActionValid(action, player) {
+                // 在翻牌前階段，玩家總是可以棄牌
+                if (action === 'fold') return true;
+
+                // 檢查是否為大盲位置
+                const isBigBlind = player === this.bigBlindPosition;
+                // 檢查當前注額是否等於大盲注
+                const isBigBlindBet = this.currentBetAmount === this.BIG_BLIND;
+                // 檢查雙方下注是否相等
+                const betsEqual = this.currentPlayerBet === this.currentBotBet;
+
+                // 過牌的特殊規則
+                if (action === 'check') {
+                    return isBigBlind && isBigBlindBet && betsEqual;
+                }
+
+                // 跟注和加注的規則
+                if (action === 'call' || action === 'raise') {
+                    return true; // 翻牌前總是可以跟注或加注
+                }
+
+                return false;
+            }
+            // 計算最小加注金額的方法
+            getMinRaiseAmount() {
+                // 如果已經有人加注
+                if (this.currentBetAmount > 0) {
+                    // 最小加注必須大於當前最大注額
+                    return this.currentBetAmount + this.BIG_BLIND;
+                }
+                // 如果沒有人加注，則最小加注為大盲注
+                return this.BIG_BLIND;
+            }
+
+            // 修改 startNewHand 方法，移除清空歷史記錄的部分
+            startNewHand() {
+                // 檢查是否可以開始新的一局
+                if (this.playerChips < this.BIG_BLIND || this.botChips < this.BIG_BLIND) {
+                    alert('籌碼不足，無法繼續遊戲！');
+                    this.resetGame();
+                    return;
+                }
+                // 將當前回合的記錄加入歷史記錄中
+                if (this.currentRoundActions.length > 0) {
+                    this.roundHistory.unshift({
+                        roundNumber: this.roundCount,
+                        actions: [...this.currentRoundActions],
+                        dealerPosition: this.dealerPosition
+                    });
+                }
+
+                // 增加局數
+                this.roundCount++;
+
+                // 準備牌局
+                this.deck = new Deck();
+                this.deck.shuffle();
+
+                // 重置當前局的狀態
+                this.pot = 0;
+                this.playerHand = [];
+                this.botHand = [];
+                this.communityCards = [];
+                this.burnCards = [];
+                this.currentBetAmount = 0;
+                this.currentPlayerBet = 0;
+                this.currentBotBet = 0;
+                this.lastBetPlayer = null;
+                this.streetActions = new Set();
+                this.currentRoundActions = [];  // 只清空當前局的行動記錄
+                
+                // 設置遊戲狀態
+                this.gameState = 'preflop';
+                this.currentStreet = 'preflop';
+
+                // 在每局開始時輪換莊家位置
+                this.dealerPosition = this.roundCount % 2 === 1 ? 'player' : 'bot';
+                
+                // 根據莊家位置設置盲注
+                if (this.dealerPosition === 'player') {
+                    this.smallBlindPosition = 'bot';
+                    this.bigBlindPosition = 'player';
+                } else {
+                    this.smallBlindPosition = 'player';
+                    this.bigBlindPosition = 'bot';
+                }
+
+                // 更新莊家按鈕顯示
+                this.updateDealerPosition();
+
+                // 發牌
+                this.dealInitialCards();
+
+                // 設置盲注
+                this.setInitialBlinds();
+
+                // 決定首位行動者
+                this.determineFirstActor();
+
+                // 更新顯示
+                this.updateDisplay();
+                this.updateGameStatus(`第 ${this.roundCount} 局開始`);
+            }
+
+
+            setInitialBlinds() {
+                if (this.dealerPosition === 'player') {
+                    // 機器人付小盲
+                    this.botChips -= this.SMALL_BLIND;
+                    this.currentBotBet = this.SMALL_BLIND;
+                    this.addActionRecord('機器人', '小盲注', this.SMALL_BLIND);
+                    
+                    // 玩家付大盲
+                    this.playerChips -= this.BIG_BLIND;
+                    this.currentPlayerBet = this.BIG_BLIND;
+                    this.addActionRecord('玩家', '大盲注', this.BIG_BLIND);
+                } else {
+                    // 玩家付小盲
+                    this.playerChips -= this.SMALL_BLIND;
+                    this.currentPlayerBet = this.SMALL_BLIND;
+                    this.addActionRecord('玩家', '小盲注', this.SMALL_BLIND);
+                    
+                    // 機器人付大盲
+                    this.botChips -= this.BIG_BLIND;
+                    this.currentBotBet = this.BIG_BLIND;
+                    this.addActionRecord('機器人', '大盲注', this.BIG_BLIND);
+                }
+                
+                this.pot = this.SMALL_BLIND + this.BIG_BLIND;
+                this.currentBetAmount = this.BIG_BLIND;
+                
+                // 設置首位行動者
+                this.currentActor = this.dealerPosition === 'player' ? 'bot' : 'player';
+                
+                // 更新顯示
+                this.updateDisplay();
+                this.updateButtonStates();
+            }
+
+            // 新增 updateDealerButton 方法
+            updateDealerButton() {
+                // 更新莊家按鈕顯示
+                const playerDealerBtn = document.getElementById('player-dealer');
+                const botDealerBtn = document.getElementById('bot-dealer');
+                
+                // 根據莊家位置顯示/隱藏按鈕
+                playerDealerBtn.style.display = this.dealerPosition === 'player' ? 'flex' : 'none';
+                botDealerBtn.style.display = this.dealerPosition === 'bot' ? 'flex' : 'none';
+
+                // 更新盲注顯示
+                document.getElementById('player-blind').textContent = 
+                    this.bigBlindPosition === 'player' ? 
+                        `大盲 ${this.BIG_BLIND}` : 
+                        this.smallBlindPosition === 'player' ? 
+                            `小盲 ${this.SMALL_BLIND}` : '';
+                        
+                document.getElementById('bot-blind').textContent = 
+                    this.bigBlindPosition === 'bot' ? 
+                        `大盲 ${this.BIG_BLIND}` : 
+                        this.smallBlindPosition === 'bot' ? 
+                            `小盲 ${this.SMALL_BLIND}` : '';
+            }
+            setPositionsAndBlinds() {
+                // 設置小盲和大盲位置
+                if (this.dealerPosition === 'player') {
+                    this.smallBlindPosition = 'bot';
+                    this.bigBlindPosition = 'bot';
+                    // 機器人下小盲注
+                    this.botChips -= this.SMALL_BLIND;
+                    this.currentBotBet = this.SMALL_BLIND;
+                    this.addActionRecord('機器人', '小盲注', this.SMALL_BLIND);
+                    // 機器人下大盲注
+                    this.botChips -= this.BIG_BLIND;
+                    this.currentBotBet = this.BIG_BLIND;
+                    this.addActionRecord('機器人', '大盲注', this.BIG_BLIND);
+                } else {
+                    this.smallBlindPosition = 'player';
+                    this.bigBlindPosition = 'player';
+                    // 玩家下小盲注
+                    this.playerChips -= this.SMALL_BLIND;
+                    this.currentPlayerBet = this.SMALL_BLIND;
+                    this.addActionRecord('玩家', '小盲注', this.SMALL_BLIND);
+                    // 玩家下大盲注
+                    this.playerChips -= this.BIG_BLIND;
+                    this.currentPlayerBet = this.BIG_BLIND;
+                    this.addActionRecord('玩家', '大盲注', this.BIG_BLIND);
+                }
+
+                this.pot = this.SMALL_BLIND + this.BIG_BLIND;
+                this.currentBetAmount = this.BIG_BLIND;
+            }
+            dealInitialCards() {
+                // 發牌順序：從小盲位置開始
+                if (this.smallBlindPosition === 'player') {
+                    this.playerHand = [this.deck.deal(), this.deck.deal()];
+                    this.botHand = [this.deck.deal(), this.deck.deal()];
+                } else {
+                    this.botHand = [this.deck.deal(), this.deck.deal()];
+                    this.playerHand = [this.deck.deal(), this.deck.deal()];
+                }
+            }
+            // 遊戲進程控制改進
+            determineFirstActor() {
+                // 決定誰先行動
+                if (this.gameState === 'preflop') {
+                    // 翻牌前從大盲位置後一位開始行動
+                    this.currentActor = this.bigBlindPosition === 'player' ? 'bot' : 'player';
+                } else {
+                    // 翻牌後從莊家後一位開始行動
+                    this.currentActor = this.dealerPosition === 'player' ? 'bot' : 'player';
+                }
+
+                // 根據當前行動者更新狀態
+                this.updateGameStatus(`輪到${this.currentActor === 'player' ? '玩家' : '機器人'}行動`);
+
+                // 更新按鈕狀態
+                this.updateButtonStates();
+
+                // 如果是機器人回合，執行機器人行動
+                if (this.currentActor === 'bot') {
+                    setTimeout(() => this.botAction(), 1000);
+                }
+            }
+
+            playerCheck() {
+                if (this.currentActor !== 'player') return;
+                if (this.currentBetAmount > 0 || this.gameState === 'preflop') return;
+                
+                this.addActionRecord('玩家', '過牌');
+                this.actionsThisStreet.push({player: 'player', action: 'check'});
+                this.lastBetPlayer = null;
+                
+                // 如果機器人之前也過牌，進入下一階段
+                const botChecked = this.actionsThisStreet.some(a => 
+                    a.player === 'bot' && a.action === 'check');
+                    
+                if (botChecked) {
+                    this.progressGame();
+                } else {
+                    this.currentActor = '機器人';
+                    setTimeout(() => this.botAction(), 1000);
+                }
+                
+                this.updateDisplay();
+            }
+            playerCall() {
+                if (this.currentActor !== 'player') return;
+                if (this.currentBetAmount === 0) return;
+                
+                const callAmount = this.currentBetAmount - this.currentPlayerBet;
+                if (callAmount <= 0) return;
+
+                const actualCallAmount = Math.min(callAmount, this.playerChips);
+                this.pot += actualCallAmount;
+                this.playerChips -= actualCallAmount;
+                this.currentPlayerBet += actualCallAmount;
+
+                this.addActionRecord('玩家', '跟注', actualCallAmount);
+                this.actionsThisStreet.push({player: 'player', action: 'call', amount: actualCallAmount});
+
+                if (this.playerChips === 0) {
+                    this.addActionRecord('玩家', '全壓');
+                    this.autoPlayToEnd();
+                } else if (this.lastBetPlayer === 'bot') {
+                    // 如果是跟注機器人的加注，則進入下一階段
+                    this.progressGame();
+                } else {
+                    this.currentActor = '機器人';
+                    setTimeout(() => this.botAction(), 1000);
+                }
+
+                this.updateDisplay();
+            }
+
+            // 玩家加注方法
+            playerRaiseCustom(raiseAmount) {
+                // 如果不是玩家回合或正在執行行動，直接返回
+                if (this.currentActor !== 'player' || this.isActionInProgress) {
+                    return;
+                }
+                // 設置行動進行中標誌
+                this.isActionInProgress = true;
+                const minRaise = this.getMinRaiseAmount();
+
+                // 檢查是否達到最小加注要求
+                if (raiseAmount < minRaise) {
+                    this.isActionInProgress = false;  // 加入重置標誌
+                    alert(`最小加注金額必須是 $${minRaise}`);
+                    return;
+                }
+
+                // 檢查是否大於當前最大注額
+                if (raiseAmount <= this.currentBetAmount - this.currentPlayerBet) {
+                    this.isActionInProgress = false;  // 加入重置標誌
+                    alert(`加注金額必須大於當前最大注額差值 $${this.currentBetAmount - this.currentPlayerBet}`);
+                    return;
+                }
+
+                // 檢查是否超過玩家籌碼
+                if (raiseAmount > this.playerChips) {
+                    this.isActionInProgress = false;  // 加入重置標誌
+                    alert('籌碼不足');
+                    return;
+                }
+
+                // 更新遊戲狀態
+                this.pot += raiseAmount;
+                this.playerChips -= raiseAmount;
+                this.lastRaiseAmount = this.currentBetAmount;
+                this.currentPlayerBet += raiseAmount;
+                this.currentBetAmount = this.currentPlayerBet;
+                this.lastBetPlayer = 'player';
+                this.streetActions.add('player');
+
+                this.addActionRecord('玩家', '加注', raiseAmount);
+
+                // 檢查是否全下
+                if (this.playerChips === 0) {
+                    this.addActionRecord('玩家', '全壓');
+                    this.autoPlayToEnd();
+                    this.isActionInProgress = false;  // 加入重置標誌
+                    return;
+                }
+
+                // 換成機器人的回合
+                this.currentActor = 'bot';
+                this.updateDisplay();
+                setTimeout(() => {
+                    this.isActionInProgress = false;  // 重置行動標誌
+                    this.botAction();
+                }, 1000);
+            }
+
+            playerFold() {
+                if (this.currentActor !== 'player' || this.isActionInProgress || !this.canFold()) {
+                    return;
+                }
+                
+                if (this.currentActor !== 'player') return;
+                
+                this.botChips += this.pot;
+                this.pot = 0;
+                this.addActionRecord('玩家', '棄牌');
+                this.gameState = 'showdown';
+                this.updateDisplay();
+                
+                setTimeout(() => {
+                    if (this.playerChips <= 0) {
+                        alert('你輸光了所有籌碼！遊戲結束！');
+                        this.resetGame();
+                    } else {
+                        this.isPlayerDealer = !this.isPlayerDealer;
+                        this.startNewHand();
+                    }
+                }, 1500);
+            }
+
+
+            // 修改機器人行動方法，確保正確切換到玩家回合
+            getBotStrategy() {
+                const pot = this.pot;
+                const callAmount = this.currentBetAmount - this.currentBotBet;
+                const potOdds = callAmount / (pot + callAmount);
+                const stage = this.gameState;
+                
+                // 基礎策略參數
+                const baseStrategy = {
+                    preflop: { fold: 0.1, call: 0.7, raise: 0.2 },
+                    flop: { fold: 0.15, call: 0.65, raise: 0.2 },
+                    turn: { fold: 0.2, call: 0.6, raise: 0.2 },
+                    river: { fold: 0.25, call: 0.55, raise: 0.2 }
+                }[stage] || { fold: 0.15, call: 0.65, raise: 0.2 };
+
+                let strategy = { ...baseStrategy };
+
+                // 1. 根據牌力調整策略
+                const handStrength = this.evaluateHandStrength();
+                if (handStrength > 0.8) { // 強牌: 增加加注機率
+                    strategy.raise += 0.3;
+                    strategy.call -= 0.2;
+                } else if (handStrength < 0.3) { // 弱牌: 增加棄牌機率
+                    strategy.fold += 0.2;
+                    strategy.call -= 0.1;
+                }
+
+                // 2. 根據對手行為調整策略
+                if (this.opponentAggressiveness > 0.7) { // 對手過於激進
+                    strategy.fold += 0.1;
+                } else if (this.opponentAggressiveness < 0.3) { // 對手較被動
+                    strategy.raise += 0.1;
+                }
+
+                // 3. 根據底池大小調整策略
+                if (pot > this.BIG_BLIND * 10) { // 大底池: 保守一點
+                    strategy.fold *= 1.2;
+                    strategy.raise *= 0.8;
+                }
+
+                // 4. 根據籌碼量調整策略
+                if (this.botChips < this.BIG_BLIND * 5) { // 籌碼低於5BB: 更激進
+                    strategy.fold *= 0.5;
+                    strategy.raise *= 2;
+                }
+
+                // 5. 添加隨機因子，增加行為多樣性
+                const randomness = Math.random() * 0.1; // 隨機變量
+                strategy.fold += randomness;
+                strategy.call -= randomness / 2;
+                strategy.raise -= randomness / 2;
+
+                // 確保數值總和為1
+                const total = strategy.fold + strategy.call + strategy.raise;
+                strategy.fold /= total;
+                strategy.call /= total;
+                strategy.raise /= total;
+
+                return strategy;
+            }
+
+
+            executeBotStrategy(strategy) {
+                const random = Math.random();
+                
+                if (random < strategy.fold && this.currentBetAmount > 0) {
+                    this.botFold();
+                } else if (random < strategy.fold + strategy.call) {
+                    this.botCall();
+                } else {
+                    this.botRaise();
+                }
+
+                // 在各個行動方法（botFold, botCall, botRaise）的最後
+                // 都要確保切換到玩家回合（除非遊戲結束）
+                if (this.gameState !== 'showdown') {
+                    this.currentActor = 'player';
+                    this.enableButtons();
+                }
+            }
+
+            botCheck() {
+                if (this.currentActor !== 'bot') return;
+                
+                this.addActionRecord('機器人', '過牌');
+                this.streetActions.add('bot');
+                this.lastAction = 'check';
+
+                if (this.hasEveryoneActed()) {
+                    this.progressGame();
+                }
+            }
+            // 在 Game 類別中尋找 canCheck 方法，替換成以下代碼：
+            canCheck(player) {
+                // 檢查是否為當前行動者
+                if (this.currentActor !== player) {
+                    return false;
+                }
+
+                // 如果當前沒有任何下注，始終可以過牌
+                if (this.currentBetAmount === 0) {
+                    return true;
+                }
+
+                // 如果雙方下注金額相等，且不為0，在翻牌前階段需要特殊處理
+                if (this.currentPlayerBet === this.currentBotBet) {
+                    if (this.gameState === 'preflop') {
+                        // 翻牌前只有大盲位置可以過牌
+                        return player === this.bigBlindPosition && 
+                            this.currentBetAmount === this.BIG_BLIND;
+                    }
+                    return true;
+                }
+
+                return false;
+            }
+
+
+            // 在 Game 類別中新增這個輔助方法
+            hasPlayerBetInThisStreet() {
+                return this.actionsThisStreet.some(action => 
+                    action.action === '加注' || action.action === '跟注'
+                );
+            }
+
+            makeBotDecision() {
+                const callAmount = this.currentBetAmount - this.currentBotBet;
+                let potOdds = callAmount / (this.pot + callAmount);
+                const random = Math.random();
+
+                // 根據不同階段調整決策
+                let foldThreshold, callThreshold;
+                switch(this.gameState) {
+                    case 'preflop':
+                        foldThreshold = 0.1;
+                        callThreshold = 0.7;
+                        break;
+                    case 'flop':
+                        foldThreshold = 0.15;
+                        callThreshold = 0.65;
+                        break;
+                    case 'turn':
+                        foldThreshold = 0.2;
+                        callThreshold = 0.6;
+                        break;
+                    case 'river':
+                        foldThreshold = 0.25;
+                        callThreshold = 0.55;
+                        break;
+                    default:
+                        foldThreshold = 0.15;
+                        callThreshold = 0.65;
+                }
+
+                // 決策邏輯
+                if (random < foldThreshold && callAmount > 0) {
+                    // 棄牌
+                    this.botFold();
+                } else if (random < callThreshold) {
+                    // 跟注
+                    this.botCall(callAmount);
+                } else {
+                    // 加注
+                    this.botRaise();
+                }
+            }
+
+            botFold() {
+                this.addActionRecord('機器人', '棄牌');
+                this.playerChips += this.pot;
+                this.pot = 0;
+                this.streetActions.add('bot');
+                this.updateDisplay();
+
+                setTimeout(() => {
+                    this.dealerPosition = this.dealerPosition === 'player' ? 'bot' : 'player';
+                    this.startNewHand();
+                }, 1500);
+            }
+
+
+            botCall() {
+                if (this.currentActor !== 'bot') return;
+
+                const callAmount = this.currentBetAmount - this.currentBotBet;
+                if (callAmount <= 0) return;
+
+                const actualCallAmount = Math.min(callAmount, this.botChips);
+                this.pot += actualCallAmount;
+                this.botChips -= actualCallAmount;
+                this.currentBotBet += actualCallAmount;
+                this.streetActions.add('bot');
+
+                this.addActionRecord('機器人', '跟注', actualCallAmount);
+
+                if (this.hasEveryoneActed()) {
+                    this.progressGame();
+                }
+            }
+
+
+            // 機器人加注方法
+            botRaise() {
+                if (this.currentActor !== 'bot') return;
+
+                const minRaise = this.getMinRaiseAmount();
+                let raiseAmount = minRaise;
+                
+                const actualRaiseAmount = Math.min(raiseAmount, this.botChips);
+                this.pot += actualRaiseAmount;
+                this.botChips -= actualRaiseAmount;
+                this.currentBotBet += actualRaiseAmount;
+                this.currentBetAmount = this.currentBotBet;
+                this.lastBetPlayer = 'bot';
+                this.streetActions.add('bot');
+
+                this.addActionRecord('機器人', '加注', actualRaiseAmount);
+
+                if (this.hasEveryoneActed()) {
+                    this.progressGame();
+                }
+            }
+            // 新增動畫效果方法
+            showActionAnimation(player, action, amount = null) {
+                const element = document.createElement('div');
+                element.className = 'action-animation';
+                element.textContent = `${action}${amount ? ` $${amount}` : ''}`;
+                
+                // 設置動畫位置
+                const position = player === 'bot' ? 
+                    document.querySelector('.bot-area') : 
+                    document.querySelector('.player-area');
+                
+                position.appendChild(element);
+
+                // 添加動畫效果
+                requestAnimationFrame(() => {
+                    element.style.opacity = '0';
+                    element.style.transform = 'translateY(-20px)';
+                });
+
+                // 移除動畫元素
+                setTimeout(() => {
+                    element.remove();
+                }, 1000);
+            }
+
+            // 新增籌碼動畫
+            showChipsAnimation(from, to, amount) {
+                const chip = document.createElement('div');
+                chip.className = 'chip-animation';
+                chip.textContent = `$${amount}`;
+                
+                document.body.appendChild(chip);
+
+                const fromRect = from.getBoundingClientRect();
+                const toRect = to.getBoundingClientRect();
+
+                chip.style.left = `${fromRect.left + fromRect.width/2}px`;
+                chip.style.top = `${fromRect.top + fromRect.height/2}px`;
+
+                requestAnimationFrame(() => {
+                    chip.style.left = `${toRect.left + toRect.width/2}px`;
+                    chip.style.top = `${toRect.top + toRect.height/2}px`;
+                });
+
+                setTimeout(() => {
+                    chip.remove();
+                }, 500);
+            }
+
+            // 擴展自動完成到底的功能
+            autoPlayToEnd() {
+                if (this.isAutoPlaying) return;
+                this.isAutoPlaying = true;
+
+                // 處理全押情況下的遊戲進程
+                const playNextRound = () => {
+                    if (this.gameState !== 'showdown') {
+                        setTimeout(() => {
+                            // 發出所有剩餘的公共牌
+                            while (this.communityCards.length < 5) {
+                                this.burnCard();  // 每發牌前先銷牌
+                                this.communityCards.push(this.deck.deal());
+                            }
+                            this.gameState = 'showdown';
+                            this.determineWinner();
+                        }, 1000);
+                    }
+                };
+
+                playNextRound();
+            }
+
+            // 改進遊戲進展邏輯
+            // 修改 progressGame 方法：
+            progressGame() {
+                console.log('Checking game progress...');
+                
+                // 檢查是否可以進入下一階段
+                if (!this.hasEveryoneActed()) {
+                    console.log('Not everyone has acted yet');
+                    return;
+                }
+
+                console.log('Everyone has acted, moving to next stage');
+
+                // 重置當前街口狀態
+                this.lastAction = null;
+                this.currentBetAmount = 0;
+                this.currentPlayerBet = 0;
+                this.currentBotBet = 0;
+                this.streetActions.clear();
+                this.actionsThisStreet = [];
+
+                // 處理不同階段
+                this.burnCard();
+                const stages = {
+                    'preflop': {
+                        next: 'flop',
+                        action: () => {
+                            console.log('Dealing flop');
+                            this.communityCards = [
+                                this.deck.deal(),
+                                this.deck.deal(),
+                                this.deck.deal()
+                            ];
+                            this.addActionRecord('系統', '發出翻牌');
+                        }
+                    },
+                    'flop': {
+                        next: 'turn',
+                        action: () => {
+                            console.log('Dealing turn');
+                            this.communityCards.push(this.deck.deal());
+                            this.addActionRecord('系統', '發出轉牌');
+                        }
+                    },
+                    'turn': {
+                        next: 'river',
+                        action: () => {
+                            console.log('Dealing river');
+                            this.communityCards.push(this.deck.deal());
+                            this.addActionRecord('系統', '發出河牌');
+                        }
+                    },
+                    'river': {
+                        next: 'showdown',
+                        action: () => {
+                            console.log('Moving to showdown');
+                            this.determineWinner();
+                        }
+                    }
+                };
+
+                const stage = stages[this.gameState];
+                if (!stage) return;
+
+                this.gameState = stage.next;
+                this.currentStreet = stage.next;
+                stage.action();
+
+                if (this.gameState !== 'showdown') {
+                    this.updateDisplay();
+                    this.determineFirstActor();
+                }
+            }
+
+
+            // 新增判定手牌階段的方法
+            determineWinner() {
+                this.updateGameStatus('攤牌');
+                this.updateDisplay();
+
+
+                setTimeout(() => {
+                    const playerAllCards = [...this.playerHand, ...this.communityCards];
+                    const botAllCards = [...this.botHand, ...this.communityCards];
+                    
+                    const playerHand = PokerHand.evaluateHand(playerAllCards);
+                    const botHand = PokerHand.evaluateHand(botAllCards);
+                    
+                    const comparison = PokerHand.compareHands(playerAllCards, botAllCards);
+                    
+                    // 顯示雙方的牌型
+                    document.getElementById('player-hand').textContent = `牌型：${playerHand.name}`;
+                    document.getElementById('bot-hand').textContent = `牌型：${botHand.name}`;
+                    
+                    // 分配獎池
+                    if (comparison > 0) {
+                        this.playerChips += this.pot;
+                        this.addActionRecord('系統', `玩家獲勝 (${playerHand.name} vs ${botHand.name})`);
+                        this.updateGameStatus(`恭喜獲勝！你的牌型：${playerHand.name}`);
+                    } else if (comparison < 0) {
+                        this.botChips += this.pot;
+                        this.addActionRecord('系統', `機器人獲勝 (${botHand.name} vs ${playerHand.name})`);
+                        this.updateGameStatus(`機器人獲勝！機器人牌型：${botHand.name}`);
+                    } else {
+                        const halfPot = Math.floor(this.pot / 2);
+                        this.playerChips += halfPot;
+                        this.botChips += this.pot - halfPot;
+                        this.addActionRecord('系統', `平手 (${playerHand.name})`);
+                        this.updateGameStatus(`平手！雙方牌型：${playerHand.name}`);
+                    }
+                    
+                    this.pot = 0;
+                    this.updateDisplay();
+
+                    // 檢查遊戲是否結束
+                    setTimeout(() => {
+                        // 保存當前回合的記錄到歷史記錄中
+                        this.roundHistory.unshift({
+                            roundNumber: this.roundCount,
+                            actions: [...this.currentRoundActions],
+                            dealerPosition: this.dealerPosition
+                        });
+                        
+                        if (this.playerChips <= 0) {
+                            alert('你輸光了所有籌碼！遊戲結束！');
+                            this.resetGame();
+                        } else if (this.botChips <= 0) {
+                            alert('恭喜你贏得了所有籌碼！');
+                            this.resetGame();
+                        } else {
+                            // 輪換莊家位置
+                            this.dealerPosition = this.dealerPosition === 'player' ? 'bot' : 'player';
+                            // 更新莊家按鈕位置
+                            this.updateDealerPosition();
+                            
+                            this.isAutoPlaying = false;
+                            setTimeout(() => {
+                                document.getElementById('player-hand').textContent = '';
+                                document.getElementById('bot-hand').textContent = '';
+                                this.startNewHand();
+                            }, 1500);
+                        }
+                    }, 2000);
+                }, 1000);
+            }
+            // 更新按鈕控制方法
+            enableButtons() {
+                console.log('Enabling buttons for player turn');
+                
+                if (this.isAutoPlaying || this.currentActor !== 'player') {
+                    return;
+                }
+
+                const callAmount = this.currentBetAmount - this.currentPlayerBet;
+                const hasRaise = callAmount > 0;  // 只有當需要跟注時才表示有人加注
+                // 更新按鈕狀態
+                const buttonStates = {
+                    'check-btn': this.canCheck('player'),
+                    'call-btn': callAmount > 0,
+                    'fold-btn': true,  // 玩家總是可以棄牌
+                    'raise-33': this.canRaise('player'),
+                    'raise-50': this.canRaise('player'),
+                    'raise-75': this.canRaise('player'),
+                    'raise-btn': this.canRaise('player')
+                };
+                console.log('Button states:', {
+                    ...buttonStates,
+                    hasRaise,
+                    callAmount,
+                    currentBetAmount: this.currentBetAmount,
+                    currentPlayerBet: this.currentPlayerBet,
+                    gameState: this.gameState
+                });
+
+                // 設置按鈕狀態
+                Object.entries(buttonStates).forEach(([id, enabled]) => {
+                    const button = document.getElementById(id);
+                    if (button) {
+                        button.disabled = !enabled;
+                        button.style.opacity = enabled ? '1' : '0.5';
+                        button.style.cursor = enabled ? 'pointer' : 'not-allowed';
+                        button.classList.toggle('disabled', !enabled);
+                        
+                        // 更新跟注按鈕的文字
+                        if (id === 'call-btn' && enabled) {
+                            button.textContent = `跟注 $${callAmount}`;
+                        }
+                    }
+                });
+
+                // 更新加注輸入框
+                const raiseInput = document.getElementById('raise-input');
+                if (raiseInput) {
+                    const canRaise = this.canRaise('player');
+                    raiseInput.disabled = !canRaise;
+                    if (canRaise) {
+                        raiseInput.min = this.getMinRaiseAmount();
+                        raiseInput.max = this.playerChips;
+                        raiseInput.value = Math.min(this.getMinRaiseAmount(), this.playerChips);
+                    }
+                }
+            }
+
+            // 更新重置遊戲的方法
+            resetGame() {
+                this.playerChips = 1000;
+                this.botChips = 1000;
+                this.pot = 0;
+                this.playerHand = [];
+                this.botHand = [];
+                this.communityCards = [];
+                this.burnCards = [];
+                this.gameState = 'waiting';
+                this.roundCount = 0;
+                this.isAutoPlaying = false;
+                this.dealerPosition = 'player'; // 設置初始莊家
+                this.currentRoundActions = [];
+                this.roundHistory = [];
+                
+                // 更新顯示
+                this.updateDisplay();
+                this.updateDealerPosition(); // 更新莊家按鈕
+                this.updateGameStatus('遊戲重新開始');
+              
+            }
+            // 修改 canFold 方法
+            canFold() {
+                // 只有當前有加注需要跟注時才能棄牌
+                const callAmount = this.currentBetAmount - this.currentPlayerBet;
+                return callAmount > 0;
+            }
+
+            burnCard() {
+                if (this.deck.cards.length > 0) {
+                    this.burnCards.push(this.deck.deal());
+                }
+            }
+            // 在 Game 類別中新增檢查是否所有玩家都行動過的方法
+            hasEveryoneActed() {
+                // 檢查是否每個玩家都行動過
+                const bothActed = this.streetActions.has('player') && this.streetActions.has('bot');
+                
+                // 確保下注金額相等
+                const betsAreEqual = this.currentPlayerBet === this.currentBotBet;
+                
+                // 在翻牌前階段，確保大盲位置的玩家已經行動
+                const blindActed = this.gameState === 'preflop' ? 
+                    this.streetActions.has(this.bigBlindPosition) : true;
+                
+                console.log('Action check:', {
+                    bothActed,
+                    betsAreEqual,
+                    blindActed,
+                    streetActions: this.streetActions,
+                    playerBet: this.currentPlayerBet,
+                    botBet: this.currentBotBet
+                });
+                
+                return bothActed && betsAreEqual && blindActed;
+            }
+
+            // 更新玩家行動方法
+            playerCheck() {
+                if (this.currentActor !== 'player' || this.isActionInProgress) {
+                    return;
+                }
+                if (!this.canCheck('player')) return;
+                
+                this.addActionRecord('玩家', '過牌');
+                this.streetActions.add('player');
+                this.lastAction = 'check';
+                
+                console.log('Player checked, checking if can progress', {
+                    botHasChecked: this.streetActions.has('bot'),
+                    everyoneActed: this.hasEveryoneActed()
+                });
+                
+                if (this.hasEveryoneActed()) {
+                    this.progressGame();
+                } else {
+                    this.currentActor = 'bot';
+                    setTimeout(() => this.botAction(), 1000);
+                }
+                
+                this.updateDisplay();
+            }
+
+            // 更新玩家跟注方法
+            playerCall() {
+                if (this.currentActor !== 'player' || this.isActionInProgress) {
+                    return;
+                }
+                if (this.currentBetAmount === 0) return;
+                
+                const callAmount = this.currentBetAmount - this.currentPlayerBet;
+                if (callAmount <= 0) return;
+
+                const actualCallAmount = Math.min(callAmount, this.playerChips);
+                this.pot += actualCallAmount;
+                this.playerChips -= actualCallAmount;
+                this.currentPlayerBet = this.currentBetAmount;
+                this.streetActions.add('player');
+
+                this.addActionRecord('玩家', '跟注', actualCallAmount);
+
+                if (this.playerChips === 0) {
+                    this.addActionRecord('玩家', '全壓');
+                    this.autoPlayToEnd();
+                } else if (this.hasEveryoneActed()) {
+                    this.progressGame();
+                } else {
+                    this.currentActor = 'bot';
+                    setTimeout(() => this.botAction(), 1000);
+                }
+                this.setCurrentActor('bot');
+                this.updateDisplay();
+            }
+
+            // 玩家加注方法
+            playerRaiseCustom(amount) {
+                const minRaise = this.getMinRaiseAmount();
+                
+                // 檢查是否達到最小加注要求
+                if (amount < minRaise) {
+                    alert(`最小加注金額必須是 $${minRaise}\n` +
+                        `(當前注額 $${this.currentBetAmount} + 最小增加額 $${minRaise - this.currentBetAmount})`);
+                    return;
+                }
+
+                // 檢查是否超過玩家籌碼
+                const maxPossibleBet = this.playerChips + this.currentPlayerBet;
+                if (amount > maxPossibleBet) {
+                    amount = maxPossibleBet; // 如果超過則全押
+                }
+
+                const actualRaiseAmount = amount - this.currentPlayerBet;
+                
+                // 更新遊戲狀態
+                this.pot += actualRaiseAmount;
+                this.playerChips -= actualRaiseAmount;
+                this.lastRaiseAmount = this.currentBetAmount; // 記錄上一次注額
+                this.currentBetAmount = amount;
+                this.currentPlayerBet = amount;
+                this.lastBetPlayer = 'player';
+                this.streetActions.add('player');
+
+                this.addActionRecord('玩家', '加注', actualRaiseAmount);
+
+                if (this.playerChips === 0) {
+                    this.addActionRecord('玩家', '全壓');
+                    this.autoPlayToEnd();
+                } else {
+                    this.currentActor = 'bot';
+                    setTimeout(() => this.botAction(), 1000);
+                }
+
+                this.updateDisplay();
+            }
+
+            // 更新機器人行動方法
+            botAction() {
+                if (this.currentActor !== 'bot' || this.isActionInProgress) {
+                    return;
+                }
+
+                this.isActionInProgress = true;
+
+                setTimeout(() => {
+                    // 檢查是否可以過牌
+                    if (this.canCheck('bot')) {
+                        this.addActionRecord('機器人', '過牌');
+                        this.streetActions.add('bot');
+                        this.lastAction = 'check';
+                        
+                        if (this.hasEveryoneActed()) {
+                            this.progressGame();
+                        } else {
+                            this.setCurrentActor('player');
+                        }
+                        this.updateDisplay();
+                        this.isActionInProgress = false;
+                        return;
+                    }
+
+                    const callAmount = this.currentBetAmount - this.currentBotBet;
+                    const random = Math.random();
+
+                    // 修改機器人的決策邏輯
+                    // 只有當有玩家下注時才考慮棄牌
+                    if (callAmount > 0 && random < 0.1) { // 10% 機率棄牌，且只在需要跟注時才考慮棄牌
+                        this.addActionRecord('機器人', '棄牌');
+                        this.playerChips += this.pot;
+                        this.pot = 0;
+                        this.streetActions.add('bot');
+                        this.updateDisplay();
+
+                        setTimeout(() => {
+                            this.dealerPosition = this.dealerPosition === 'player' ? 'bot' : 'player';
+                            this.startNewHand();
+                        }, 1500);
+                    } else if (random < 0.7) { // 60% 機率跟注/過牌
+                        if (callAmount > 0) {
+                            const actualCallAmount = Math.min(callAmount, this.botChips);
+                            this.pot += actualCallAmount;
+                            this.botChips -= actualCallAmount;
+                            this.currentBotBet = this.currentBetAmount;
+                            this.streetActions.add('bot');
+                            this.addActionRecord('機器人', '跟注', actualCallAmount);
+                        }
+                        
+                        if (this.botChips === 0) {
+                            this.addActionRecord('機器人', '全壓');
+                            this.autoPlayToEnd();
+                        } else if (this.hasEveryoneActed()) {
+                            this.progressGame();
+                        } else {
+                            this.setCurrentActor('player');
+                        }
+                    } else { // 30% 機率加注
+                        const minRaise = this.getMinRaiseAmount();
+                        const raiseAmount = Math.min(this.currentBetAmount + minRaise, this.botChips);
+                        const actualRaiseAmount = raiseAmount - this.currentBotBet;
+                        
+                        this.pot += actualRaiseAmount;
+                        this.botChips -= actualRaiseAmount;
+                        this.currentBetAmount = raiseAmount;
+                        this.currentBotBet = raiseAmount;
+                        this.lastBetPlayer = 'bot';
+                        this.streetActions.add('bot');
+                        
+                        this.addActionRecord('機器人', '加注', actualRaiseAmount);
+                        
+                        if (this.botChips === 0) {
+                            this.addActionRecord('機器人', '全壓');
+                            this.autoPlayToEnd();
+                        } else {
+                            this.setCurrentActor('player');
+                        }
+                    }
+
+                    this.isActionInProgress = false;
+                    this.updateDisplay();
+                }, 1000);
+            }
+        }
+        // 確保遊戲在頁面加載完成後初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, initializing game...'); // 調試用
+            window.game = new Game();
+        });
+    </script>
+</body>
+</html>
